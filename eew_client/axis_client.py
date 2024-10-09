@@ -86,7 +86,12 @@ class AXISClient:
         for server_list_index in range(len(server_list)):
             server_url = server_list[server_list_index]
             try: 
-                self.ws = websocket.WebSocketApp("%s/socket" % server_url, header=["Authorization: Bearer %s" % self.eew_access_token], on_open=self.on_open, on_message=self.on_message, on_error=self.on_error, on_close=self.on_close)                
+                self.ws = websocket.WebSocketApp("%s/socket" % server_url, 
+                                                header=["Authorization: Bearer %s" % self.eew_access_token],
+                                                on_open=self.on_open,
+                                                on_message=self.on_message,
+                                                on_error=self.on_error,
+                                                on_close=self.on_close)                
                 break
             except:
                 if server_list_index == len(server_list) - 1:
