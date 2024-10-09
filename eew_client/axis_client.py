@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 
 class AXISClient:
-    def __init__(self, 
+    def __init__(self,
                     web_socket_func_open =None,
                     web_socket_func_message =None,
                     web_socket_func_error =None,
@@ -60,7 +60,8 @@ class AXISClient:
         print("### open ###")
         
     def get_server_list(self) -> list:
-        response = requests.get(self.eew_server_list_api_url, headers={"Authorization": "Bearer %s" % self.eew_access_token})
+        response = requests.get(self.eew_server_list_api_url, 
+                                headers={"Authorization": "Bearer %s" % self.eew_access_token})
         if response.status_code != 200:
             print("[Error] cannot connect server-list server!")
             raise ConnectionError()
@@ -106,8 +107,8 @@ class AXISClient:
 
                 if (datetime.datetime.now() - start_datetime).seconds >= 3600*24:
                     if self.judge_need_reflesh_token():
-                            self.reflesh_token()
-                            start_datetime = datetime.datetime.now()
+                        self.reflesh_token()
+                        start_datetime = datetime.datetime.now()
                 
         except KeyboardInterrupt:
             self.ws.close()
