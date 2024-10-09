@@ -1,119 +1,38 @@
-import os
-
-import threading
-import time
-import datetime
-import json
-
-import requests
-import websocket
-from dotenv import load_dotenv
+# encoding: utf-8
+from axis_client import AXISClient
 
 class EEWClient:
-    def __init__(self, 
-                web_socket_func_open =None,
-                web_socket_func_message =None,
-                web_socket_func_error =None,
-                web_socket_func_close =None,
-                debug: bool=False):
+    def __init__(self,
+                eew_service: str = "",
+                web_socket_func_open = None,
+                web_socket_func_message = None,
+                web_socket_func_error = None,
+                web_socket_func_close = None,
+                debug: bool = False):
+        
+        self.eew_service_client = None
+        if eew_service == "":
+            raise ValueError("name of eew service is required.\nPlese set eew_service to 'axis' or 'wolfx'.")
+        elif eew_service == "axis":
+            self.eew_service_client = AXISClient(
+                web_socket_func_open=web_socket_func_open,
+                web_socket_func_message=web_socket_func_message,
+                web_socket_func_error=web_socket_func_error,
+                web_socket_func_close=web_socket_func_close,
+                debug=debug
+            )
+        elif eew_service == "wolfx":
+            raise ValueError("Not implemented yet.")
+        else:
+            raise ValueError("name of eew service is invalid.\nPlese set eew_service to 'axis' or 'wolfx'.")
+        
         self.debug = debug
-        websocket.enableTrace(debug)
-        self.ws = None
         
-        if web_socket_func_open is not None:
-            self.on_open = web_socket_func_open
-        if web_socket_func_message is not None:
-            self.on_message = web_socket_func_message
-        if web_socket_func_error is not None:
-            self.on_error = web_socket_func_error
-        if web_socket_func_close is not None:
-            self.on_close = web_socket_func_close
-        
-        self.is_connected = False
-        
-        self.is_reflesh_eew_api_token_at_end_of_month = True
-        self.is_refleshed_eew_api_token = False
-        
-        load_dotenv()
-        self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
-        self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
-
-    def on_message(self, ws: websocket.WebSocket, message):
-        if not self.is_connected:
-            if message == "hello":
-                self.is_connected = True
-                print("[Info] connected to server!")
-            else:
-                print("[Error] cannot connect to server!")
-                raise ConnectionError()
-        print(message)
-
-    def on_error(self, ws: websocket.WebSocket, error):
-        print(error)
-
-    def on_close(self, ws: websocket.WebSocket, close_status_code, close_msg):
-        print("### closed ###")
-
-    def on_open(self, ws: websocket.WebSocket):
-        print("### open ###")
-        
-    def get_server_list(self) -> list:
-        response = requests.get(self.eew_server_list_api_url, headers={"Authorization": "Bearer %s" % self.eew_access_token})
-        if response.status_code != 200:
-            print("[Error] cannot connect server-list server!")
-            raise ConnectionError()
-        response_json = json.loads(response.text)
-        server_list = response_json.get("servers", [])
-        if len(server_list) < 1:
-            print("[Error] cannot get server list!")
-            raise ValueError()
-        if self.debug:
-            print("[Info] server list: %s" % server_list)
-        return server_list
-    
-    def judge_need_reflesh_token(self) -> bool:
-        print("[Info] judge need reflesh token")
-        return False
-    
-    def reflesh_token(self):
-        print("[Info] reflesh token")
-    
     def run_forever(self):
-        server_list = self.get_server_list()
-        for server_list_index in range(len(server_list)):
-            server_url = server_list[server_list_index]
-            try: 
-                self.ws = websocket.WebSocketApp("%s/socket" % server_url, header=["Authorization: Bearer %s" % self.eew_access_token], on_open=self.on_open, on_message=self.on_message, on_error=self.on_error, on_close=self.on_close)                
-                break
-            except:
-                if server_list_index == len(server_list) - 1:
-                    print("[Error] cannot connect to any server!")
-                    raise ConnectionError()
-                else:
-                    continue
-        if self.debug:
-            print("[Info] connected to %s" % server_url)
-        
-        try:
-            ws_thread = threading.Thread(target=self.ws.run_forever, kwargs={"ping_interval": 25}, name="ws_thread")
-            ws_thread.start()
-            start_datetime = datetime.datetime.now()
-            while True:
-                # プログラムを24hours止める
-                time.sleep(3600*24)
+        self.eew_service_client.run_forever()
 
-                if (datetime.datetime.now() - start_datetime).seconds >= 3600*24:
-                    if self.judge_need_reflesh_token():
-                            self.reflesh_token()
-                            start_datetime = datetime.datetime.now()
-                
-            
-        except KeyboardInterrupt:
-            self.ws.close()
-        # error everything
-        except:
-            self.ws.close()
+        
         
 if __name__ == "__main__":
-    socket = EEWClient(debug=True)
+    socket = EEWClient(eew_service="axis",  debug=True)
     socket.run_forever()
