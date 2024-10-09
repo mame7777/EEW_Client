@@ -1,25 +1,51 @@
 import os
 
-import _thread
+import threading
 import time
+import datetime
 import json
 
 import requests
 import websocket
 from dotenv import load_dotenv
 
-class EEW_Client:
-    def __init__(self, debug: bool=False):
+class EEWClient:
+    def __init__(self, 
+                web_socket_func_open =None,
+                web_socket_func_message =None,
+                web_socket_func_error =None,
+                web_socket_func_close =None,
+                debug: bool=False):
         self.debug = debug
         websocket.enableTrace(debug)
         self.ws = None
+        
+        if web_socket_func_open is not None:
+            self.on_open = web_socket_func_open
+        if web_socket_func_message is not None:
+            self.on_message = web_socket_func_message
+        if web_socket_func_error is not None:
+            self.on_error = web_socket_func_error
+        if web_socket_func_close is not None:
+            self.on_close = web_socket_func_close
+        
+        self.is_connected = False
+        
+        self.is_reflesh_eew_api_token_at_end_of_month = True
+        self.is_refleshed_eew_api_token = False
         
         load_dotenv()
         self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
         self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
 
     def on_message(self, ws: websocket.WebSocket, message):
-        
+        if not self.is_connected:
+            if message == "hello":
+                self.is_connected = True
+                print("[Info] connected to server!")
+            else:
+                print("[Error] cannot connect to server!")
+                raise ConnectionError()
         print(message)
 
     def on_error(self, ws: websocket.WebSocket, error):
@@ -45,6 +71,13 @@ class EEW_Client:
             print("[Info] server list: %s" % server_list)
         return server_list
     
+    def judge_need_reflesh_token(self) -> bool:
+        print("[Info] judge need reflesh token")
+        return False
+    
+    def reflesh_token(self):
+        print("[Info] reflesh token")
+    
     def run_forever(self):
         server_list = self.get_server_list()
         for server_list_index in range(len(server_list)):
@@ -62,8 +95,18 @@ class EEW_Client:
             print("[Info] connected to %s" % server_url)
         
         try:
-            self.ws.run_forever(ping_interval=25)
-            
+            ws_thread = threading.Thread(target=self.ws.run_forever, kwargs={"ping_interval": 25}, name="ws_thread")
+            ws_thread.start()
+            start_datetime = datetime.datetime.now()
+            while True:
+                # プログラムを24hours止める
+                time.sleep(3600*24)
+
+                if (datetime.datetime.now() - start_datetime).seconds >= 3600*24:
+                    if self.judge_need_reflesh_token():
+                            self.reflesh_token()
+                            start_datetime = datetime.datetime.now()
+                
             
         except KeyboardInterrupt:
             self.ws.close()
@@ -72,5 +115,5 @@ class EEW_Client:
             self.ws.close()
         
 if __name__ == "__main__":
-    socket = EEW_Client(debug=True)
+    socket = EEWClient(debug=True)
     socket.run_forever()
