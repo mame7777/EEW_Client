@@ -43,7 +43,9 @@ class AXISClient:
         self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
         self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
 
-    def on_message(self, ws: websocket.WebSocket, message):
+    def on_message(
+        self, ws: websocket.WebSocket, message
+    ):  # pylint: disable=unused-argument
         if not self.is_connected:
             if message == "hello":
                 self.is_connected = True
@@ -53,7 +55,9 @@ class AXISClient:
                 raise ConnectionError()
         print(message)
 
-    def on_error(self, ws: websocket.WebSocket, error):
+    def on_error(
+        self, ws: websocket.WebSocket, error
+    ):  # pylint: disable=unused-argument
         print(error)
 
     def on_close(
@@ -61,7 +65,7 @@ class AXISClient:
     ):  # pylint: disable=unused-argument
         print("### closed ###")
 
-    def on_open(self, ws: websocket.WebSocket):
+    def on_open(self, ws: websocket.WebSocket):  # pylint: disable=unused-argument
         print("### open ###")
 
     def get_server_list(self) -> list:
