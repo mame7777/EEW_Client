@@ -28,33 +28,33 @@ class AXISClient:
         if web_socket_func_open is not None:
             self.on_open = web_socket_func_open
         else:
-            self.on_open = self.__private_on_open
+            self.on_open = self._private_on_open
 
         if web_socket_func_message is not None:
             self.on_message = web_socket_func_message
         else:
-            self.on_message = self.__private_on_message
+            self.on_message = self._private_on_message
 
         if web_socket_func_error is not None:
             self.on_error = web_socket_func_error
         else:
-            self.on_error = self.__private_on_error
+            self.on_error = self._private_on_error
 
         if web_socket_func_close is not None:
             self.on_close = web_socket_func_close
         else:
-            self.on_close = self.__private_on_close
+            self.on_close = self._private_on_close
 
         self.is_connected = False
 
-        self.is_reflesh_eew_api_token_at_end_of_month = True
+        self.is_try_reflesh_eew_api_token_at_end_of_month = True
         self.is_refleshed_eew_api_token = False
 
         load_dotenv()
         self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
         self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
 
-    def __private_on_message(
+    def _private_on_message(
         self, ws: websocket.WebSocket, message
     ):  # pylint: disable=unused-argument
         """messageを受け取ったときのデフォルト処理\n
@@ -77,7 +77,7 @@ class AXISClient:
                 raise ConnectionError()
         print(message)
 
-    def __private_on_error(
+    def _private_on_error(
         self, ws: websocket.WebSocket, error
     ):  # pylint: disable=unused-argument
         """エラーが発生したときのデフォルト処理\n
@@ -90,7 +90,7 @@ class AXISClient:
         """
         print(error)
 
-    def __private_on_close(
+    def _private_on_close(
         self, ws: websocket.WebSocket, close_status_code, close_msg
     ):  # pylint: disable=unused-argument
         """接続が切断されたときのデフォルト処理\n
@@ -104,7 +104,7 @@ class AXISClient:
         """
         print("### closed ###")
 
-    def __private_on_open(
+    def _private_on_open(
         self, ws: websocket.WebSocket
     ):  # pylint: disable=unused-argument
         """接続が開かれたときのデフォルト処理\n
@@ -156,6 +156,16 @@ class AXISClient:
         """API Tokenをリフレッシュする"""
         print("[Info] reflesh token")
 
+    def manage_token(self):
+        """API Tokenの管理を行う"""
+        sleep_time = 3600 * 24
+        while True:
+            if self.is_try_reflesh_eew_api_token_at_end_of_month:
+                break
+            time.sleep(sleep_time)
+            if self.judge_need_reflesh_token():
+                self.reflesh_token()
+
     def run_forever(self):
         """EEW情報を取得し続ける
 
@@ -181,21 +191,13 @@ class AXISClient:
                 continue
 
         try:
-            ws_thread = threading.Thread(
-                target=self.ws.run_forever,
-                kwargs={"ping_interval": 25},
-                name="ws_thread",
+            mng_api_token_thread = threading.Thread(
+                target=self.manage_token,
+                name="mng_api_token_thread",
+                daemon=True,
             )
-            ws_thread.start()
-            start_datetime = datetime.datetime.now()
-            while True:
-                # プログラムを24hours止める
-                time.sleep(3600 * 24)
-
-                if (datetime.datetime.now() - start_datetime).seconds >= 3600 * 24:
-                    if self.judge_need_reflesh_token():
-                        self.reflesh_token()
-                        start_datetime = datetime.datetime.now()
+            mng_api_token_thread.start()
+            self.ws.run_forever(ping_interval=25)
 
         except KeyboardInterrupt:
             self.ws.close()
