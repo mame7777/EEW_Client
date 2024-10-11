@@ -190,15 +190,14 @@ class AXISClient:
                 print(f"[Error] cannot connect to {server_url}\n{e}")
                 continue
 
+        mng_api_token_thread = threading.Thread(
+            target=self.manage_token,
+            name="mng_api_token_thread",
+            daemon=True,
+        )
+        mng_api_token_thread.start()
         try:
-            mng_api_token_thread = threading.Thread(
-                target=self.manage_token,
-                name="mng_api_token_thread",
-                daemon=True,
-            )
-            mng_api_token_thread.start()
             self.ws.run_forever(ping_interval=25)
-
         except KeyboardInterrupt:
             self.ws.close()
         # error everything
