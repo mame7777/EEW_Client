@@ -3,6 +3,7 @@ import os
 import threading
 import time
 
+import dotenv
 import requests
 import websocket
 from dotenv import load_dotenv
@@ -151,9 +152,20 @@ class AXISClient:
         print("[Info] judge need reflesh token")
         return False
 
-    def reflesh_token(self):
+    def reflesh_token(self) -> int:
         """API Tokenをリフレッシュする"""
-        print("[Info] reflesh token")
+
+        ### トークンをリフレッシュする処理 ###
+        new_api_token = "hogehoge"
+
+        dotenv_file = dotenv.find_dotenv()
+        dotenv.set_key(
+            dotenv_path=dotenv_file,
+            key_to_set="EEW_ACCESS_TOKEN",
+            value_to_set=new_api_token,
+        )
+        print("[Info] refleshed token")
+        return 0
 
     def manage_token(self):
         """API Tokenの管理を行う"""
@@ -202,4 +214,5 @@ class AXISClient:
         # error everything
         except Exception as e:
             print(f"[Error] {e}")
+            self.ws.close()
             self.ws.close()
