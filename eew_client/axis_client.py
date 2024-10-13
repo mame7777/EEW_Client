@@ -55,6 +55,7 @@ class AXISClient:
         load_dotenv()
         self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
         self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
+        self.eew_token_reflesh_api_url = os.environ["EEW_TOKEN_REFLESH_API_URL"]
 
     def _private_on_message(
         self, ws: websocket.WebSocket, message
@@ -170,10 +171,34 @@ class AXISClient:
         """API Tokenをリフレッシュする"""
 
         ### トークンをリフレッシュする処理 ###
-        new_api_token = "hogehoge"
+        response = requests.get(
+            self.eew_server_list_api_url,
+            headers={"Authorization": f"Bearer {self.eew_access_token}"},
+            timeout=6.0,
+        )
 
+        if response.status_code == 402:
+            response_json = json.loads(response.text)
+            if response_json.get("status", "") == "contract has expired":
+                print("[Warning] contract has expired!")
+                return 1
+        elif response.status_code != 200:
+            print("[Warning] cannot connect api reflesh server!")
+            return 1
+
+        response_json = json.loads(response.text)
+        try:
+            new_api_token = response_json.get("token", "")
+        except KeyError:
+            print("[Warning] cannot get new api token! (KeyError)")
+            return 1
+
+        if new_api_token == self.eew_access_token:
+            print("[Warning] cannot get new api token! (same token)")
+            return 1
         self.eew_access_token = new_api_token
         self.is_refleshed_eew_api_token = True
+
         print("[Info] refleshed token")
         return 0
 
