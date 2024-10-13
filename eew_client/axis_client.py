@@ -2,7 +2,6 @@
 
 import datetime
 import json
-import os
 import threading
 import time
 
@@ -270,6 +269,4 @@ class AXISClient:
         # error everything
         except Exception as e:
             print(f"[Error] {e}")
-            self.ws.close()
-            self.ws.close()
             self.ws.close()
