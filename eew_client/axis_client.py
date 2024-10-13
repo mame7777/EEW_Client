@@ -3,7 +3,6 @@ import os
 import threading
 import time
 
-import dotenv
 import requests
 import websocket
 from dotenv import load_dotenv
@@ -158,12 +157,8 @@ class AXISClient:
         ### トークンをリフレッシュする処理 ###
         new_api_token = "hogehoge"
 
-        dotenv_file = dotenv.find_dotenv()
-        dotenv.set_key(
-            dotenv_path=dotenv_file,
-            key_to_set="EEW_ACCESS_TOKEN",
-            value_to_set=new_api_token,
-        )
+        self.eew_access_token = new_api_token
+        self.is_refleshed_eew_api_token = True
         print("[Info] refleshed token")
         return 0
 
