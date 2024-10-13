@@ -8,7 +8,6 @@ import time
 
 import requests
 import websocket
-from dotenv import load_dotenv
 
 
 class AXISClient:
@@ -49,13 +48,35 @@ class AXISClient:
 
         self.is_connected = False
 
-        self.is_try_reflesh_eew_api_token_at_end_of_month = True
+        self.is_try_reflesh_access_token_at_end_of_month = True
         self.is_refleshed_eew_api_token = False
 
-        load_dotenv()
-        self.eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
-        self.eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
-        self.eew_token_reflesh_api_url = os.environ["EEW_TOKEN_REFLESH_API_URL"]
+        self.eew_access_token = str()
+        self.eew_server_list_api_url = str()
+        self.eew_token_reflesh_api_url = str()
+
+    def set_token_and_url(
+        self,
+        eew_access_token: str,
+        eew_server_list_api_url: str,
+        eew_token_reflesh_api_url: str = "",
+    ):
+        """API TokenとAPI URLを設定する
+
+        Args:
+            eew_access_token (str): AXISのAPIアクセストークン
+            eew_server_list_api_url (str):
+                EEW情報を配信しているサーバリストを取得するAPI(Available Servers List API)のURL
+            eew_token_reflesh_api_url (str, optional):
+                APIアクセストークンのリフレッシュAPI(Token Refresh API)のURL. セットされていない場合は更新を行わない．
+        """
+
+        self.eew_access_token = eew_access_token
+        self.eew_server_list_api_url = eew_server_list_api_url
+        if eew_token_reflesh_api_url != "":
+            self.eew_token_reflesh_api_url = eew_token_reflesh_api_url
+        else:
+            self.is_try_reflesh_access_token_at_end_of_month = False
 
     def _private_on_message(
         self, ws: websocket.WebSocket, message
@@ -154,7 +175,7 @@ class AXISClient:
         Returns:
             bool: tokenを更新する必要があるかどうか
         """
-        if not self.is_try_reflesh_eew_api_token_at_end_of_month:
+        if not self.is_try_reflesh_access_token_at_end_of_month:
             return False
 
         today = datetime.datetime.today()
@@ -206,7 +227,7 @@ class AXISClient:
         """API Tokenの管理を行う"""
         sleep_time = 3600 * 24
         while True:
-            if self.is_try_reflesh_eew_api_token_at_end_of_month:
+            if self.is_try_reflesh_access_token_at_end_of_month:
                 break
             time.sleep(sleep_time)
             if self.judge_need_reflesh_token():
