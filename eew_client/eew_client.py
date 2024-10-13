@@ -1,8 +1,7 @@
 # encoding: utf-8
 """ EEWのクライアントを提供するモジュール """
 
-from axis_client import AXISClient
-from dotenv import load_dotenv
+from .axis_client import AXISClient
 
 
 class EEWClient:
@@ -44,20 +43,3 @@ class EEWClient:
     def run_forever(self):
         """サーバーとの通信を継続する"""
         self.axis.run_forever()
-
-
-if __name__ == "__main__":
-    import os
-
-    load_dotenv()
-    eew_access_token = os.environ["EEW_ACCESS_TOKEN"]
-    eew_server_list_api_url = os.environ["EEW_SERVER_LIST_API_URL"]
-    eew_token_reflesh_api_url = os.environ["EEW_TOKEN_REFLESH_API_URL"]
-    client = EEWClient(eew_service_name="axis", debug=True)
-    client.axis.set_token_and_url(
-        eew_access_token=eew_access_token,
-        eew_server_list_api_url=eew_server_list_api_url,
-        eew_token_reflesh_api_url=eew_token_reflesh_api_url,
-    )
-    client.run_forever()
-    client.run_forever()
