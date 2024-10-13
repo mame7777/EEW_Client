@@ -1,3 +1,6 @@
+""" AXISのサーバーと通信するクライアントプログラム """
+
+import datetime
 import json
 import os
 import threading
@@ -144,12 +147,24 @@ class AXISClient:
 
     def judge_need_reflesh_token(self) -> bool:
         """API Tokenを更新する必要があるかどうかを判定する
+        API Toekの更新は25日以降に行う．
+        15日までにこの関数が呼ばれた場合，更新済みフラグをFalseにする
 
         Returns:
             bool: tokenを更新する必要があるかどうか
         """
-        print("[Info] judge need reflesh token")
-        return False
+        if not self.is_try_reflesh_eew_api_token_at_end_of_month:
+            return False
+
+        today = datetime.datetime.today()
+        if self.is_refleshed_eew_api_token:
+            if today.day < 15:
+                self.is_refleshed_eew_api_token = False
+            return False
+        elif today.day >= 25:
+            return True
+        else:
+            return False
 
     def reflesh_token(self) -> int:
         """API Tokenをリフレッシュする"""
@@ -209,5 +224,6 @@ class AXISClient:
         # error everything
         except Exception as e:
             print(f"[Error] {e}")
+            self.ws.close()
             self.ws.close()
             self.ws.close()
