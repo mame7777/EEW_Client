@@ -188,9 +188,12 @@ class AXISClient:
             return False
 
     def reflesh_token(self) -> int:
-        """API Tokenをリフレッシュする"""
+        """API Tokenを更新する
 
-        ### トークンをリフレッシュする処理 ###
+        Returns:
+            int: 成功した場合は0, 失敗した場合は1
+        """
+
         response = requests.get(
             self.eew_server_list_api_url,
             headers={"Authorization": f"Bearer {self.eew_access_token}"},
