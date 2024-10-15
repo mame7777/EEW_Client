@@ -17,7 +17,7 @@ class AXISClient:
         self,
         web_socket_func_open: Callable[[websocket.WebSocket], None] = None,
         web_socket_func_message: Callable[[websocket.WebSocket, str], None] = None,
-        web_socket_func_error: Callable[[websocket.WebSocket, str]] = None,
+        web_socket_func_error: Callable[[websocket.WebSocket, str], str] = None,
         web_socket_func_close: Callable = None,
         debug: bool = False,
     ):
@@ -26,25 +26,10 @@ class AXISClient:
         websocket.enableTrace(debug)
         self.ws = None
 
-        if web_socket_func_open is not None:
-            self.on_open = web_socket_func_open
-        else:
-            self.on_open = self._private_on_open
-
-        if web_socket_func_message is not None:
-            self.on_message = web_socket_func_message
-        else:
-            self.on_message = self._private_on_message
-
-        if web_socket_func_error is not None:
-            self.on_error = web_socket_func_error
-        else:
-            self.on_error = self._private_on_error
-
-        if web_socket_func_close is not None:
-            self.on_close = web_socket_func_close
-        else:
-            self.on_close = self._private_on_close
+        self.ws_on_open = web_socket_func_open
+        self.ws_on_message = web_socket_func_message
+        self.ws_on_error = web_socket_func_error
+        self.ws_on_close = web_socket_func_close
 
         self.is_connected = False
 
@@ -99,6 +84,8 @@ class AXISClient:
             else:
                 print("[Error] cannot connect to server!")
                 raise ConnectionError()
+        if self.ws_on_message is not None:
+            self.ws_on_message(ws, message)
         print(message)
 
     def _private_on_error(
@@ -113,6 +100,9 @@ class AXISClient:
             error (_type_): エラー内容
         """
         print(error)
+        self.is_connected = False
+        if self.ws_on_error is not None:
+            self.ws_on_error(ws, error)
 
     def _private_on_close(
         self, ws: websocket.WebSocket, close_status_code, close_msg
@@ -127,6 +117,9 @@ class AXISClient:
             close_msg (_type_): クローズメッセージ
         """
         print("### closed ###")
+        self.is_connected = False
+        if self.ws_on_close is not None:
+            self.ws_on_close(ws)
 
     def _private_on_open(
         self, ws: websocket.WebSocket
@@ -139,6 +132,8 @@ class AXISClient:
             ws (websocket.WebSocket): websocketのインスタンス
         """
         print("### open ###")
+        if self.ws_on_open is not None:
+            self.ws_on_open(ws)
 
     def get_server_list(self) -> list:
         """EEW情報を配信しているサーバリストを取得する
@@ -248,10 +243,10 @@ class AXISClient:
                 self.ws = websocket.WebSocketApp(
                     f"{server_url}/socket",
                     header=[f"Authorization: Bearer {self.eew_access_token}"],
-                    on_open=self.on_open,
-                    on_message=self.on_message,
-                    on_error=self.on_error,
-                    on_close=self.on_close,
+                    on_open=self._private_on_open,
+                    on_message=self._private_on_message,
+                    on_error=self._private_on_error,
+                    on_close=self._private_on_close,
                 )
                 if self.debug:
                     print(f"[Info] connected to {server_url}")
