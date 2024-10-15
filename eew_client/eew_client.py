@@ -1,5 +1,6 @@
 # encoding: utf-8
 """ EEWのクライアントを提供するモジュール """
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -72,6 +73,22 @@ class EEWInfo:
     supplementary_text: str = ""  # 補足情報
 
 
+def get_eew_info_axis(eew_message: str) -> EEWInfo:
+    """AXISのサーバーから受け取ったEEW情報を解析する
+
+    Args:
+        eew_message (dict): web socketで受け取ったメッセージ
+
+    Returns:
+        EEWInfo: EEW情報を格納したデータクラス
+    """
+    eew_info_data = EEWInfo()
+    eew_json = json.loads(eew_message)
+
+    eew_info_data.title = eew_json["title"]
+    return eew_info_data
+
+
 class EEWClient:
     """EEW配信サービスのクライアント"""
 
@@ -91,7 +108,13 @@ class EEWClient:
             if func_get_eew_info is None:
                 on_message = None
             else:
-                on_message = func_get_eew_info(self.get_eew_info_axis)
+
+                def on_message(
+                    ws: WebSocket, message: str
+                ):  # pylint: disable=unused-argument
+                    eew_info_dataclass = get_eew_info_axis(message)
+                    return func_get_eew_info(eew_info_dataclass)
+
             self.axis = AXISClient(
                 web_socket_func_open=web_socket_func_open,
                 web_socket_func_message=on_message,
@@ -111,20 +134,6 @@ class EEWClient:
             )
 
         self.debug = debug
-
-    def get_eew_info_axis(self, eew_message: dict) -> EEWInfo:
-        """AXISのサーバーから受け取ったEEW情報を解析する
-
-        Args:
-            eew_message (dict): web socketで受け取ったメッセージ
-
-        Returns:
-            EEWInfo: EEW情報を格納したデータクラス
-        """
-        eew_info_data = EEWInfo()
-
-        eew_info_data.title = eew_message["title"]
-        return eew_info_data
 
     def run_forever(self):
         """サーバーとの通信を継続する"""
