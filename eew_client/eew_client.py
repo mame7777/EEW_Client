@@ -3,6 +3,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Callable
+
+from websocket import WebSocket
 
 from .axis_client import AXISClient
 
@@ -74,11 +77,11 @@ class EEWClient:
 
     def __init__(
         self,
-        func_get_eew_info=None,
+        func_get_eew_info: Callable[[EEWInfo], None] = None,
         eew_service_name: str = "",
-        web_socket_func_open=None,
-        web_socket_func_error=None,
-        web_socket_func_close=None,
+        web_socket_func_open: Callable[[WebSocket], None] = None,
+        web_socket_func_error: Callable[[WebSocket], None] = None,
+        web_socket_func_close: Callable = None,
         debug: bool = False,
     ):
 

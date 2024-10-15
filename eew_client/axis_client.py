@@ -4,6 +4,7 @@ import datetime
 import json
 import threading
 import time
+from typing import Callable
 
 import requests
 import websocket
@@ -14,10 +15,10 @@ class AXISClient:
 
     def __init__(
         self,
-        web_socket_func_open=None,
-        web_socket_func_message=None,
-        web_socket_func_error=None,
-        web_socket_func_close=None,
+        web_socket_func_open: Callable[[websocket.WebSocket], None] = None,
+        web_socket_func_message: Callable[[websocket.WebSocket, str], None] = None,
+        web_socket_func_error: Callable[[websocket.WebSocket, str]] = None,
+        web_socket_func_close: Callable = None,
         debug: bool = False,
     ):
 
