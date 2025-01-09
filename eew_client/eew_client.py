@@ -1,28 +1,11 @@
 # encoding: utf-8
 """ EEWのクライアントを提供するモジュール """
-import json
 from typing import Callable
 
 from websocket import WebSocket
 
-from .axis_client import AXISClient
+from .axis_client import AXISClient, analyze_eew_info_axis
 from .data_format import EEWInfo
-
-
-def get_eew_info_axis(eew_message: str) -> EEWInfo:
-    """AXISのサーバーから受け取ったEEW情報を解析する
-
-    Args:
-        eew_message (dict): web socketで受け取ったメッセージ
-
-    Returns:
-        EEWInfo: EEW情報を格納したデータクラス
-    """
-    eew_info_data = EEWInfo()
-    eew_json = json.loads(eew_message)
-
-    eew_info_data.title = eew_json["title"]
-    return eew_info_data
 
 
 class EEWClient:
@@ -48,7 +31,7 @@ class EEWClient:
                 def on_message(
                     ws: WebSocket, message: str
                 ):  # pylint: disable=unused-argument
-                    eew_info_dataclass = get_eew_info_axis(message)
+                    eew_info_dataclass = analyze_eew_info_axis(message)
                     return func_get_eew_info(eew_info_dataclass)
 
             self.axis = AXISClient(

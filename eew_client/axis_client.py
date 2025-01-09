@@ -9,6 +9,8 @@ from typing import Callable
 import requests
 import websocket
 
+from .data_format import EEWInfo
+
 
 class AXISClient:
     """AXISのサーバーと通信するクライアント"""
@@ -269,3 +271,19 @@ class AXISClient:
         except Exception as e:
             print(f"[Error] {e}")
             self.ws.close()
+
+
+def analyze_eew_info_axis(eew_message: str):
+    """サーバーから受け取ったEEW情報を解析する
+
+    Args:
+        eew_message (str): EEW情報が入ったJSON文字列
+
+    Returns:
+        EEWInfo: EEW情報を格納したデータクラス
+    """
+    eew_info_data = EEWInfo()
+    eew_json = json.loads(eew_message)
+
+    eew_info_data.title = eew_json["title"]
+    return eew_info_data
