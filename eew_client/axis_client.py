@@ -79,15 +79,16 @@ class AXISClient:
         Raises:
             ConnectionError: 接続前に正常接続のメッセージが来なかった場合
         """
-        if not self.is_connected:
+        if self.is_connected:
+            if self.ws_on_message is not None:
+                self.ws_on_message(ws, message)
+        else:
             if message == "hello":
                 self.is_connected = True
                 print("[Info] connected to server!")
             else:
                 print("[Error] cannot connect to server!")
                 raise ConnectionError()
-        if self.ws_on_message is not None:
-            self.ws_on_message(ws, message)
         print(message)
 
     def _private_on_error(
