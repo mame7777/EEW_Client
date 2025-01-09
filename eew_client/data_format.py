@@ -66,3 +66,4 @@ class EEWInfo:
     is_cancel: bool = False  # キャンセル報かどうか
     is_training: bool = False  # 訓練報かどうか
     supplementary_text: str = ""  # 補足情報
+    forecast_list: list[Forcast] = field(default_factory=list)  # 予測情報のリストS
